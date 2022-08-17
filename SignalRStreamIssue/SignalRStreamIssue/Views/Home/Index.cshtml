@@ -13,6 +13,7 @@
             <button class="btn-warning pull-right" id="startBadStream">Start Bad Stream</button>
             <button class="btn-success pull-right" id="startGoodStream">Start Good Stream</button>
             <button class="btn-success pull-right" id="stopStream">Stop Stream</button>
+            <button class="btn-success pull-right" id="startCSharpStream">Start C# Stream</button>
         </div>
     </div>
 
@@ -88,6 +89,26 @@
                 });
                 document.getElementById('stopStream').addEventListener('click', function (event) {
                     connection.send('StopStream', 'abcdefg');
+                });
+                document.getElementById('startCSharpStream').addEventListener('click', function (event) {
+                    console.log('in startCSharpStream');
+                    connection.send('AddJsDevice', 'abcdefg');
+                    console.log('added jsdevice');
+                    const subj = new signalR.Subject();
+                    console.log(subj);
+                    var iteration = 0;
+                    connection.send('ReceiveBadStream', subj);
+                    const intervalHandle = setInterval(() => {
+                         iteration++;
+                        var text = 'left ' + iteration.toString();
+                        console.log(text)
+                        subj.next(text);
+                        if (iteration == 10) {
+                            clearInterval(intervalHandle);
+                            subj.complete();
+                            connection.send('RemoveJsDevice', 'abcdefg');
+                        }
+                    }, 500);
                 });
             }
 

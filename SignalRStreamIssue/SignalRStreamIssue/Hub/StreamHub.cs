@@ -18,6 +18,40 @@
             await Clients.Client(Context.ConnectionId).SendCoreAsync("InitDevice", new object[] { });
         }
 
+        public async Task SendStreamLocal(string deviceId)
+        {
+            System.Diagnostics.Debug.WriteLine("SendStreamLocal");
+            connManager.AddDevice(Context.ConnectionId, deviceId);
+            Func<IAsyncEnumerable<string>> stream = delegate()
+            {
+                return LocalStream();
+            };
+            await Clients.All.SendAsync("ReceiveBadStream", stream);
+            connManager.RemoveDevice(Context.ConnectionId);
+        }
+
+        async IAsyncEnumerable<string> LocalStream()
+        {
+            for (var i = 0; i < 5; i++)
+            {
+                var data = "left " + i;
+                yield return data;
+            }
+        }
+
+        public async Task AddJsDevice(string deviceId)
+        {
+            connManager.AddDevice(Context.ConnectionId, deviceId);
+            System.Diagnostics.Debug.WriteLine("Added Js Device");
+
+        }
+
+        public async Task RemoveJsDevice(string deviceId)
+        {
+            connManager.RemoveDevice(deviceId);
+            System.Diagnostics.Debug.WriteLine("Removed Js Device");
+        }
+
         public async Task AddViewer(string deviceId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, deviceId);

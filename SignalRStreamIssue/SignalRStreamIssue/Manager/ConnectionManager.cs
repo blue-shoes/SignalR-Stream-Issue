@@ -9,6 +9,11 @@
             devices.Add(new DeviceConnection(connectionId, deviceId));
         }
 
+        public void RemoveDevice(string deviceId)
+        {
+            devices.Remove(devices.Find(i => i.DeviceId == deviceId));
+        }
+
         public string GetDeviceConnection(string deviceId)
         {
            return devices.Find(i => i.DeviceId.Equals(deviceId))?.ConnectionId;
