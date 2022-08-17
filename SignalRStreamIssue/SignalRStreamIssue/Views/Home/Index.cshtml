@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/site.css" rel="stylesheet" />
+    <title>Azure SignalR Go Connection</title>
+</head>
+<body>
+    <h2 class="text-center" style="margin-top: 0; padding-top: 30px; padding-bottom: 30px;">Azure SignalR Go Client</h2>
+    <div class="container" style="height: calc(100% - 110px);">
+        <div id="messages" style="background-color: whitesmoke; "></div>
+        <div style="overflow: auto; border-style: ridge; border-top-style: hidden;">
+            <button class="btn-warning pull-right" id="startBadStream">Start Bad Stream</button>
+            <button class="btn-success pull-right" id="startGoodStream">Start Good Stream</button>
+            <button class="btn-success pull-right" id="stopStream">Stop Stream</button>
+        </div>
+    </div>
+
+    <!--Reference the SignalR library. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+
+    <!--Add script to update the page and send messages.-->
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOMContentLoaded');
+            const messageInput = document.getElementById('message');
+
+            function createMessageEntry(encodedName, encodedMsg) {
+                var entry = document.createElement('div');
+                entry.classList.add("message-entry");
+                if (encodedName === 'right') {
+                    entry.innerHTML = `<div class="message-avatar pull-right">${encodedName}</div>` +
+                        `<div class="message-content pull-right">${encodedMsg}</div>`;
+                } else {
+                    entry.innerHTML = `<div class="message-avatar pull-left">${encodedName}</div>` +
+                        `<div class="message-content pull-left">${encodedMsg}</div>`;
+                }
+                return entry;
+            }
+
+            function bindConnectionMessage(connection) {
+                var connInit = function (data) {
+                    console.log('in connInit');
+                    if (!data) return;
+                    var encodedName = "init";
+                    var encodedMsg = data;
+                    var messageEntry = createMessageEntry(encodedName, encodedMsg);
+
+                    var messageBox = document.getElementById('messages');
+                    messageBox.appendChild(messageEntry);
+                    messageBox.scrollTop = messageBox.scrollHeight;
+                };
+                var getLeftStream = function (data) {
+                    if (!data) return;
+                    var encodedName = "left";
+                    var encodedMsg = data;
+                    var messageEntry = createMessageEntry(encodedName, encodedMsg);
+
+                    var messageBox = document.getElementById('messages');
+                    messageBox.appendChild(messageEntry);
+                    messageBox.scrollTop = messageBox.scrollHeight;
+                };
+                var getRightStream = function (data) {
+                    if (!data) return;
+                    var encodedName = "right";
+                    var encodedMsg = data;
+                    var messageEntry = createMessageEntry(encodedName, encodedMsg);
+
+                    var messageBox = document.getElementById('messages');
+                    messageBox.appendChild(messageEntry);
+                    messageBox.scrollTop = messageBox.scrollHeight;
+                };
+                connection.on('connInit', connInit);
+                connection.on('sendLeftStream', getLeftStream)
+                connection.on('sendRightStream', getRightStream);
+                connection.onclose(onConnectionError);
+            }
+
+
+            function onConnected(connection) {
+                console.log('connection started');
+                connection.send('AddViewer', 'abcdefg')
+                document.getElementById('startGoodStream').addEventListener('click', function (event) {
+                    connection.send('StartGoodStream', 'abcdefg');
+                });
+                document.getElementById('startBadStream').addEventListener('click', function (event) {
+                    connection.send('StartBadStream', 'abcdefg');
+                });
+                document.getElementById('stopStream').addEventListener('click', function (event) {
+                    connection.send('StopStream', 'abcdefg');
+                });
+            }
+
+            function onConnectionError(error) {
+                if (error && error.message) {
+                    console.error(error.message);
+                }
+                var modal = document.getElementById('myModal');
+                modal.classList.add('in');
+                modal.style = 'display: block;';
+            }
+            console.log('Creating connection');
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/stream')
+                .build();
+            bindConnectionMessage(connection);
+            connection.start()
+                .then(() => onConnected (connection))
+                .catch(error => console.error(error.message));
+            console.log('Connection created');
+        });
+    </script>
+</body>
+</html>
